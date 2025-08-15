@@ -1,0 +1,71 @@
+# Generated files
+node_modules
+dist
+.DS_Store
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+.next/
+
+# Typescript
+*.tsbuildinfo
+*.d.ts
+!next-auth.d.ts
+
+# Turborepo
+.turbo
+
+# Env files
+.env*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# auth0 config
+.jwt.js
+.jwt.cjs.js
+.auth0-credentials.json
+.mypy_cache
+
+# vercel
+.vercel
+
+# Misc
+**/foo/
+todo.txt
+todo
+attendance-system-backup-4a6c384f3f52.json
