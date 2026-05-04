@@ -1,7 +1,7 @@
 import { PutObjectCommandInput, S3Client, S3ClientConfig } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { Storage } from "@google-cloud/storage";
-import { spawn } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { filesize } from "filesize";
 import { createReadStream, createWriteStream, statSync } from "fs";
 import { rm } from "fs/promises";
@@ -93,12 +93,84 @@ function waitForProcessExit(child: ReturnType<typeof spawn>, stderr: string[]) {
   });
 }
 
+function runCommand(command: string, args: string[]) {
+  return spawnSync(command, args, {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
+
+function parsePostgresMajor(versionText: string) {
+  const match = versionText.match(/(\d+)(?:\.\d+)?/);
+  if (!match) {
+    return null;
+  }
+
+  return Number.parseInt(match[1], 10);
+}
+
+function getServerMajorVersion() {
+  const result = runCommand("psql", [
+    `--dbname=${env.BACKUP_DATABASE_URL}`,
+    "--tuples-only",
+    "--no-align",
+    "--command=SHOW server_version_num",
+  ]);
+
+  if (result.status !== 0) {
+    throw {
+      error: "Failed to detect PostgreSQL server version",
+      stderr: result.stderr.trimEnd(),
+    };
+  }
+
+  const versionNumber = Number.parseInt(result.stdout.trim(), 10);
+  if (!Number.isFinite(versionNumber)) {
+    throw {
+      error: "PostgreSQL server returned an invalid server_version_num",
+      stdout: result.stdout.trim(),
+    };
+  }
+
+  return Math.floor(versionNumber / 10000);
+}
+
+function findPgDumpForServer(serverMajor: number) {
+  const candidates = [
+    `pg_dump-${serverMajor}`,
+    `/usr/libexec/postgresql${serverMajor}/pg_dump`,
+    `/usr/lib/postgresql/${serverMajor}/bin/pg_dump`,
+    "pg_dump",
+  ];
+
+  for (const candidate of candidates) {
+    const result = runCommand(candidate, ["--version"]);
+    if (result.status !== 0) {
+      continue;
+    }
+
+    const clientMajor = parsePostgresMajor(result.stdout);
+    if (clientMajor !== null && clientMajor >= serverMajor) {
+      console.log(`Using ${candidate}: ${result.stdout.trim()}`);
+      return candidate;
+    }
+  }
+
+  throw {
+    error: `No compatible pg_dump found for PostgreSQL server major ${serverMajor}`,
+    detail:
+      "Install a PostgreSQL client with the same or newer major version in the backup image.",
+  };
+}
+
 const dumpToFile = async (filePath: string) => {
   console.log("Dumping DB to file...");
 
+  const serverMajor = getServerMajorVersion();
+  const pgDumpCommand = findPgDumpForServer(serverMajor);
   const stderr: string[] = [];
   const pgDump = spawn(
-    "pg_dump",
+    pgDumpCommand,
     [
       `--dbname=${env.BACKUP_DATABASE_URL}`,
       "--format=tar",
