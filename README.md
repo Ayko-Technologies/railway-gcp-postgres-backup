@@ -111,3 +111,5 @@ You can also automate downloads using the AWS CLI or Google Cloud SDK if needed.
 ## Deployment Notes
 
 On Railway, this backup runs in **single shot mode** by default. Each deployment or scheduled run will execute one backup and then exit. Use Railway's native cron to schedule a cron job in this mode. To change this behavior, adjust the `SINGLE_SHOT_MODE` environment variable in your Railway project settings.
+
+The Docker image installs multiple PostgreSQL clients using the `PG_CLIENT_VERSIONS` build argument. At runtime, the backup process detects the database server major version and chooses a compatible `pg_dump`. PostgreSQL does not support using an older `pg_dump` against a newer server, so include every server major version you expect to run.
