@@ -1,36 +1,56 @@
-# Postgres S3 backups
+# Postgres GCS backups
 
-A simple NodeJS application to backup your PostgreSQL database to S3 via a cron.
+A simple Node.js application that backs up PostgreSQL databases to Google Cloud Storage (GCS) on a cron. S3 and S3-compatible object storage are also supported.
 
 ## Configuration
+
+### Provider
+
+- `BACKUP_PROVIDER` - Storage provider: `gcp` for Google Cloud Storage (the primary provider) or `s3` for Amazon S3 and S3-compatible storage. Defaults to `s3`.
+
+### Google Cloud Storage (GCP)
+
+Set these when `BACKUP_PROVIDER=gcp`.
+
+- `GCP_BUCKET` - The Google Cloud Storage bucket that will receive backups.
+
+- `GCP_SERVICE_ACCOUNT_KEY` - A base64-encoded Google Cloud service-account JSON key. The service account must be allowed to write objects to `GCP_BUCKET`.
+
+- `GCP_PROJECT_ID` - The Google Cloud project ID. Optional when it can be inferred from the service-account credentials.
+
+### Amazon S3 and S3-compatible storage
+
+Set these when `BACKUP_PROVIDER=s3`.
 
 - `AWS_ACCESS_KEY_ID` - AWS access key ID.
 
 - `AWS_SECRET_ACCESS_KEY` - AWS secret access key, sometimes also called an application key.
 
-- `AWS_S3_BUCKET` - The name of the bucket that the access key ID and secret access key are authorized to access.
+- `AWS_S3_BUCKET` - The bucket that the configured credentials are authorized to access.
 
-- `AWS_S3_REGION` - The name of the region your bucket is located in, set to `auto` if unknown.
+- `AWS_S3_REGION` - The region your bucket is located in; set to `auto` if unknown.
 
-- `BACKUP_DATABASE_URL` - The connection string of the database to backup.
+- `AWS_S3_ENDPOINT` - Custom S3 endpoint. Use this for third-party S3 services such as Cloudflare R2 or Backblaze B2.
 
-- `BACKUP_CRON_SCHEDULE` - The cron schedule to run the backup on. Example: `0 5 * * *`
+- `AWS_S3_FORCE_PATH_STYLE` - Use path-style addressing instead of the default subdomain-style addressing; useful for MinIO. Defaults to `false`.
 
-- `AWS_S3_ENDPOINT` - The S3 custom endpoint you want to use. Applicable for 3-rd party S3 services such as Cloudflare R2 or Backblaze R2.
+- `SUPPORT_OBJECT_LOCK` - Provide an MD5 hash with the backup file for buckets that use object lock. Defaults to `false`.
 
-- `AWS_S3_FORCE_PATH_STYLE` - Use path style for the endpoint instead of the default subdomain style, useful for MinIO. Default `false`
+### Backup behaviour
 
-- `RUN_ON_STARTUP` - Run a backup on startup of this application then proceed with making backups on the set schedule.
+- `BACKUP_DATABASE_URL` - The connection string of the database to back up.
 
-- `BACKUP_FILE_PREFIX` - Add a prefix to the file name.
+- `BACKUP_CRON_SCHEDULE` - Cron schedule for backups. Defaults to `0 5 * * *`.
 
-- `BUCKET_SUBFOLDER` - Define a subfolder to place the backup files in.
+- `RUN_ON_STARTUP` - Run a backup when the application starts, then continue on the configured schedule. Defaults to `false`.
 
-- `SINGLE_SHOT_MODE` - Run a single backup on start and exit when completed. Useful with the platform's native CRON schedular.
+- `SINGLE_SHOT_MODE` - Run one backup at startup and exit. Useful with a platform's native cron scheduler. Defaults to `true`.
 
-- `SUPPORT_OBJECT_LOCK` - Enables support for buckets with object lock by providing an MD5 hash with the backup file.
+- `BACKUP_FILE_PREFIX` - Prefix for backup file names. Defaults to `backup`.
 
-- `BACKUP_OPTIONS` - Add any valid pg_dump option, supported pg_dump options can be found [here](https://www.postgresql.org/docs/current/app-pgdump.html). Example: `--exclude-table=pattern`
+- `BUCKET_SUBFOLDER` - Subfolder in the target bucket for backup files.
+
+- `BACKUP_OPTIONS` - Any valid `pg_dump` option. See the [pg_dump documentation](https://www.postgresql.org/docs/current/app-pgdump.html). Example: `--exclude-table=pattern`
 
 ## Running Locally
 
@@ -43,7 +63,19 @@ To run this backup tool locally, follow these steps:
    ```
 
 2. **Set up environment variables:**
-   Create a `.env` file in the project root and set the required variables. You can use either AWS S3 or Google Cloud Storage (GCP) as your backup provider.
+   Create a `.env` file in the project root and set the required variables. Google Cloud Storage (GCP) is the primary provider; AWS S3 and S3-compatible storage are also supported.
+
+   ### For Google Cloud Storage (GCP)
+
+   ```env
+   BACKUP_PROVIDER=gcp
+   GCP_PROJECT_ID=your-gcp-project-id
+   GCP_BUCKET=your-gcs-bucket-name
+   # Base64-encoded contents of a service-account JSON key file
+   GCP_SERVICE_ACCOUNT_KEY=your-base64-encoded-service-account-key
+   BACKUP_DATABASE_URL=your-postgres-connection-string
+   # Optional: BUCKET_SUBFOLDER, BACKUP_FILE_PREFIX, etc.
+   ```
 
    ### For AWS S3
 
@@ -55,17 +87,6 @@ To run this backup tool locally, follow these steps:
    AWS_S3_REGION=your-region
    BACKUP_DATABASE_URL=your-postgres-connection-string
    # Optional: AWS_S3_ENDPOINT, AWS_S3_FORCE_PATH_STYLE, BUCKET_SUBFOLDER, etc.
-   ```
-
-   ### For Google Cloud Storage (GCP)
-
-   ```env
-   BACKUP_PROVIDER=gcp
-   GCP_PROJECT_ID=your-gcp-project-id
-   GCP_BUCKET=your-gcs-bucket-name
-   GCP_SERVICE_ACCOUNT_KEY=path-to-your-service-account-keyfile.json // This should be a base64 encoded string of your service account json file.
-   BACKUP_DATABASE_URL=your-postgres-connection-string
-   # Optional: BUCKET_SUBFOLDER, etc.
    ```
 
 3. **Run the backup:**
@@ -80,7 +101,7 @@ To run this backup tool locally, follow these steps:
    SINGLE_SHOT_MODE=true npm start
    ```
 
-Backups will be uploaded to the configured S3 or GCS bucket. See environment variable descriptions above for more options.
+Backups will be uploaded to the configured GCS or S3 bucket. See the configuration reference above for more options.
 
 ## Restoring a Backup
 
