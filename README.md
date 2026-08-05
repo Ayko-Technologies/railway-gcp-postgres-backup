@@ -2,6 +2,8 @@
 
 A simple Node.js application that backs up PostgreSQL databases to Google Cloud Storage (GCS) on a cron. S3 and S3-compatible object storage are also supported.
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/lrgopx?referralCode=_07xRy&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
 ## Configuration
 
 ### Provider
