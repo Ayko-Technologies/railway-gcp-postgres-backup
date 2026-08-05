@@ -6,7 +6,7 @@ A simple Node.js application that backs up PostgreSQL databases to Google Cloud 
 
 ### Provider
 
-- `BACKUP_PROVIDER` - Storage provider: `gcp` for Google Cloud Storage (the primary provider) or `s3` for Amazon S3 and S3-compatible storage. Defaults to `s3`.
+- `BACKUP_PROVIDER` - Storage provider: `gcp` for Google Cloud Storage (the primary provider) or `s3` for Amazon S3 and S3-compatible storage. Defaults to `gcp`.
 
 ### Google Cloud Storage (GCP)
 
