@@ -68,7 +68,6 @@ To run this backup tool locally, follow these steps:
    ### For Google Cloud Storage (GCP)
 
    ```env
-   BACKUP_PROVIDER=gcp
    GCP_PROJECT_ID=your-gcp-project-id
    GCP_BUCKET=your-gcs-bucket-name
    # Base64-encoded contents of a service-account JSON key file
