@@ -66,7 +66,7 @@ export const env = envsafe({
   }),
   BACKUP_PROVIDER: str({
     desc: "Backup provider: s3 or gcp",
-    default: "s3",
+    default: "gcp",
     allowEmpty: true,
   }),
   BACKUP_FILE_PREFIX: str({
